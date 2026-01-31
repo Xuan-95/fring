@@ -6,7 +6,7 @@ from dotenv import dotenv_values, load_dotenv
 from pydantic import AfterValidator
 from pydantic_settings import BaseSettings
 
-base_path = Path(__file__).parent.parent
+base_path = Path(__file__).parent.parent.parent
 load_dotenv(base_path / ".env", override=True)
 load_dotenv(base_path / ".env.development", override=True)
 
