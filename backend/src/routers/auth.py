@@ -31,15 +31,17 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(_get
             detail="User account is inactive",
         )
 
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True in production with HTTPS
+        secure=False,
+        path="/",
+        domain="localhost",
         max_age=30 * 60,  # 30 minutes
     )
 
@@ -48,7 +50,9 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(_get
         value=refresh_token,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True in production with HTTPS
+        secure=False,
+        path="/",
+        domain="localhost",
         max_age=7 * 24 * 60 * 60,  # 7 days
     )
 
@@ -61,8 +65,8 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(_get
 @router.post("/logout")
 def logout(response: Response):
     """Clear authentication cookies."""
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
+    response.delete_cookie(key="access_token", path="/", domain="localhost")
+    response.delete_cookie(key="refresh_token", path="/", domain="localhost")
     return {"message": "Successfully logged out"}
 
 
@@ -81,12 +85,13 @@ def refresh(
 
     try:
         payload = verify_token(refresh_token, token_type="refresh")
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
             )
+        user_id = int(user_id_str)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -100,8 +105,8 @@ def refresh(
             detail="User not found or inactive",
         )
 
-    new_access_token = create_access_token(data={"sub": user.id})
-    new_refresh_token = create_refresh_token(data={"sub": user.id})
+    new_access_token = create_access_token(data={"sub": str(user.id)})
+    new_refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
     response.set_cookie(
         key="access_token",
@@ -109,6 +114,8 @@ def refresh(
         httponly=True,
         samesite="lax",
         secure=False,
+        path="/",
+        domain="localhost",
         max_age=30 * 60,
     )
 
@@ -118,6 +125,8 @@ def refresh(
         httponly=True,
         samesite="lax",
         secure=False,
+        path="/",
+        domain="localhost",
         max_age=7 * 24 * 60 * 60,
     )
 

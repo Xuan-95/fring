@@ -2,11 +2,14 @@ const BASE_URL = 'http://localhost:8000/api/v1';
 
 async function apiRequest(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
+  const token = localStorage.getItem('access_token');
+
   const config = {
     ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   };
@@ -17,9 +20,14 @@ async function apiRequest(endpoint, options = {}) {
     if (response.status === 401) {
       const refreshed = await refreshToken();
       if (refreshed) {
+        // Riprova la richiesta con il nuovo token
+        const newToken = localStorage.getItem('access_token');
+        config.headers['Authorization'] = `Bearer ${newToken}`;
         response = await fetch(url, config);
       } else {
-        window.location.href = '/login';
+        // Pulisci localStorage e lascia che React Router gestisca il redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         throw new Error('Session expired. Please login again.');
       }
     }
