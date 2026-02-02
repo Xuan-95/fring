@@ -17,7 +17,7 @@ def required(value):
     return value
 
 
-class PostgresSettings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     DATABASE_URL: Annotated[str, AfterValidator(required)] = ""
 
 
@@ -28,5 +28,5 @@ class AuthSettings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
-postgres_settings = PostgresSettings()
+db_settings = DatabaseSettings()
 auth_settings = AuthSettings()
