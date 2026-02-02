@@ -7,8 +7,9 @@ class UserException(HTTPException):
 
 
 class TaskNotFoundException(HTTPException):
-    def __init__(self, task_id) -> None:
-        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Task {task_id} not found")
+    def __init__(self, task_id=None) -> None:
+        detail = f"Task {task_id} not found" if task_id else "Task not found"
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
 
 class AlreadyExistingIDException(HTTPException):

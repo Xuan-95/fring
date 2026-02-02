@@ -41,7 +41,7 @@ class Task(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(nullable=False)
-    description: Mapped[str]
+    description: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.TODO)
     assigned_users: Mapped[list[User]] = relationship(secondary=user_tasks, back_populates="tasks")
 

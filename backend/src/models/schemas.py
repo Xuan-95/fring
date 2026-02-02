@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class TaskStatus(str, Enum):
@@ -26,9 +26,13 @@ class UserUpdate(BaseModel):
 class UserResponse(UserModel):
     created_at: datetime
 
+    model_config = {"from_attributes": True}
+
 
 class UserWithTasks(UserResponse):
-    tasks: list["TaskResponse"]
+    tasks: list["TaskResponse"] = []
+
+    model_config = {"from_attributes": True}
 
 
 class TaskModel(BaseModel):
@@ -48,11 +52,13 @@ class TaskUpdate(BaseModel):
 class TaskResponse(TaskModel):
     id: int
     created_at: datetime
-    assigned_to: list[UserResponse]
+    assigned_to: list[UserResponse] = Field(default=[], validation_alias="assigned_users", serialization_alias="assigned_to")
+
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class TaskWithUsers(TaskResponse):
-    assigned_to: list[UserResponse]
+    assigned_to: list[UserResponse] = Field(default=[], validation_alias="assigned_users", serialization_alias="assigned_to")
 
 
 class TaskAssignment(BaseModel):

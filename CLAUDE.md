@@ -19,6 +19,18 @@ python main.py
 
 # Run Hurl API tests
 hurl --variable host=localhost --variable port=8000 src/test/hurls/*.hurl
+
+# Run pytest unit and integration tests
+uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov=src --cov-report=html
+
+# Run specific test file
+uv run pytest tests/test_users.py
+
+# Run tests in verbose mode
+uv run pytest -v
 ```
 
 ### Frontend (from `/frontend` directory)
@@ -35,6 +47,15 @@ npm run build
 
 # Lint
 npm run lint
+
+# Run tests
+npm test
+
+# Run tests in watch mode (for development)
+npm test -- --watch
+
+# Run tests with UI
+npm run test:ui
 ```
 
 ## Architecture
@@ -44,6 +65,7 @@ npm run lint
 - **Framework**: FastAPI with SQLAlchemy ORM
 - **Database**: SQLite (file-based database, path in `DATABASE_URL` env var)
 - **Python Version**: 3.13
+- **Testing**: pytest with TestClient, 58 tests covering models, auth, users, and tasks
 
 **Structure**:
 - `main.py` - Application entry point, registers routers and creates tables on startup
@@ -51,15 +73,20 @@ npm run lint
 - `src/db/connection.py` - SQLAlchemy engine and session factory
 - `src/models/orm/todo.py` - ORM models (User, Task with many-to-many relationship via `user_tasks` join table)
 - `src/models/schemas.py` - Pydantic request/response DTOs
-- `src/routers/` - API endpoint handlers (users.py, tasks.py)
+- `src/routers/` - API endpoint handlers (users.py, tasks.py, auth.py)
+- `tests/` - Test suite with conftest.py fixtures for database and client setup
 
 **API**: All endpoints under `/api/v1`, auto-generated docs at `/docs`
 
 ### Frontend
 
 - **Framework**: React 19 with Vite
-- **Status**: Scaffolded but not yet integrated with backend API
-- `src/components/` - React components (header, footer)
+- **Router**: React Router v7 for navigation
+- **Testing**: Vitest + React Testing Library, 22 tests covering components
+- **State Management**: Context API (AuthContext)
+- `src/components/` - React components (Login, Header, PasswordChange, ProtectedRoute)
+- `src/contexts/` - React contexts for global state
+- `src/test/` - Test setup and utilities
 
 ## Database Schema
 
