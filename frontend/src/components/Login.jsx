@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -8,7 +7,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +15,7 @@ export default function Login() {
 
     try {
       await login(username, password);
-      navigate('/tasks');
+      // Il redirect a /tasks è gestito automaticamente da App.jsx quando user cambia
     } catch (err) {
       setError(err.message);
     } finally {

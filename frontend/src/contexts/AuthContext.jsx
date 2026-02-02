@@ -8,8 +8,17 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('http://localhost:8000/api/v1/auth/me', {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -17,6 +26,8 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
       } else {
         setUser(null);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -27,32 +38,56 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (username, password) => {
-    const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ username, password }),
-    });
+    console.log('🔵 Login function called with username:', username);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
+    try {
+      console.log('🔵 Sending login request...');
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      console.log('🔵 Login response status:', response.status);
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.log('🔴 Login failed:', error);
+        throw new Error(error.detail || 'Login failed');
+      }
+
+      const data = await response.json();
+      console.log('🟢 Login successful, saving tokens...');
+
+      // Save tokens to localStorage
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+
+      console.log('🟢 Tokens saved, checking auth...');
+      await checkAuth();
+      return data;
+    } catch (error) {
+      console.log('🔴 Login error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    await checkAuth();
-    return data;
   };
 
   const logout = async () => {
     try {
-      await fetch('http://localhost:8000/api/v1/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        await fetch('http://localhost:8000/api/v1/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
     } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       setUser(null);
     }
   };
