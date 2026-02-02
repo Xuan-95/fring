@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getTasks, createTask, updateTask, deleteTask } from '../utils/api';
+import { getTasks, createTask, updateTask, deleteTask, getUsers, assignUserToTask, removeUserFromTask } from '../utils/api';
 import './TasksPage.css';
 
 export default function TasksPage() {
@@ -10,6 +10,7 @@ export default function TasksPage() {
   const [error, setError] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [users, setUsers] = useState([]);
 
   const loadTasks = async () => {
     try {
@@ -24,8 +25,18 @@ export default function TasksPage() {
     }
   };
 
+  const loadUsers = async () => {
+    try {
+      const data = await getUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    }
+  };
+
   useEffect(() => {
     loadTasks();
+    loadUsers();
   }, []);
 
   const handleCreateTask = async (e) => {
@@ -60,6 +71,24 @@ export default function TasksPage() {
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       await updateTask(taskId, { status: newStatus });
+      await loadTasks();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleAssignUser = async (taskId, userId) => {
+    try {
+      await assignUserToTask(taskId, userId);
+      await loadTasks();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleRemoveUser = async (taskId, userId) => {
+    try {
+      await removeUserFromTask(taskId, userId);
       await loadTasks();
     } catch (err) {
       setError(err.message);
@@ -162,6 +191,53 @@ export default function TasksPage() {
                       <option value="in_progress">In Progress</option>
                       <option value="completed">Completed</option>
                       <option value="canceled">Canceled</option>
+                    </select>
+                  </div>
+
+                  {/* User Assignment Section */}
+                  <div className="assignment-control">
+                    <label className="assignment-label">Assigned To</label>
+
+                    {/* Display currently assigned users as badges */}
+                    {task.assigned_to && task.assigned_to.length > 0 && (
+                      <div className="assigned-users-badges">
+                        {task.assigned_to.map((assignedUser) => (
+                          <div key={assignedUser.id} className="user-badge">
+                            <span className="user-badge-name">{assignedUser.username}</span>
+                            {task.assigned_to.length > 1 && (
+                              <button
+                                onClick={() => handleRemoveUser(task.id, assignedUser.id)}
+                                className="user-badge-remove"
+                                aria-label={`Remove ${assignedUser.username}`}
+                                type="button"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Dropdown to add users */}
+                    <select
+                      className="assignment-select"
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAssignUser(task.id, parseInt(e.target.value));
+                          e.target.value = '';
+                        }
+                      }}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Add user...</option>
+                      {users
+                        .filter(u => !task.assigned_to?.some(au => au.id === u.id))
+                        .map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.username}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

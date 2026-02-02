@@ -107,3 +107,9 @@ export async function removeUserFromTask(taskId, userId) {
     method: 'DELETE',
   });
 }
+
+export async function getUsers(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/users/${queryString ? `?${queryString}` : ''}`;
+  return apiRequest(endpoint);
+}
