@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getTasks, createTask, updateTask, deleteTask } from '../utils/api';
+import './TasksPage.css';
 
 export default function TasksPage() {
   const { user, logout } = useAuth();
@@ -66,100 +67,96 @@ export default function TasksPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>Loading tasks...</div>;
+    return <div className="loading-state">Loading tasks...</div>;
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1>Tasks</h1>
-          <p>Welcome, {user?.username}!</p>
+    <div className="tasks-page">
+      <header className="tasks-header">
+        <div className="tasks-header-content">
+          <h1 className="tasks-title">Tasks</h1>
+          <p className="welcome-text">Welcome back, {user?.username}! 👋</p>
         </div>
-        <button
-          onClick={logout}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
+        <button onClick={logout} className="logout-btn">
           Logout
         </button>
-      </div>
+      </header>
 
       {error && (
-        <div style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#fee' }}>
-          {error}
+        <div className="error-message">
+          ⚠️ {error}
         </div>
       )}
 
-      <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-        <h2>Create New Task</h2>
-        <form onSubmit={handleCreateTask}>
-          <div style={{ marginBottom: '10px' }}>
+      <section className="create-task-section">
+        <h2 className="create-task-title">Create New Task</h2>
+        <form onSubmit={handleCreateTask} className="create-task-form">
+          <div className="form-group">
             <input
               type="text"
-              placeholder="Task title"
+              placeholder="What needs to be done?"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
-              style={{ width: '100%', padding: '8px', fontSize: '16px' }}
               required
             />
           </div>
-          <div style={{ marginBottom: '10px' }}>
+          <div className="form-group">
             <textarea
-              placeholder="Task description (optional)"
+              placeholder="Add some details... (optional)"
               value={newTaskDescription}
               onChange={(e) => setNewTaskDescription(e.target.value)}
-              style={{ width: '100%', padding: '8px', fontSize: '16px', minHeight: '80px' }}
             />
           </div>
-          <button
-            type="submit"
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
+          <button type="submit" className="submit-btn">
             Add Task
           </button>
         </form>
-      </div>
+      </section>
 
-      <h2>Your Tasks ({tasks.length})</h2>
-      {tasks.length === 0 ? (
-        <p>No tasks yet. Create one above!</p>
-      ) : (
-        <div>
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              style={{
-                padding: '15px',
-                marginBottom: '10px',
-                backgroundColor: 'white',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: '0 0 10px 0' }}>{task.title}</h3>
-                  {task.description && <p style={{ margin: '0 0 10px 0', color: '#666' }}>{task.description}</p>}
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ marginRight: '10px' }}>Status:</label>
+      <section className="tasks-list-section">
+        <div className="tasks-list-header">
+          <h2>Your Tasks</h2>
+          <div className="task-count-badge">{tasks.length}</div>
+        </div>
+
+        {tasks.length === 0 ? (
+          <div className="empty-state">
+            No tasks yet. Create your first one above!
+          </div>
+        ) : (
+          <div className="tasks-grid">
+            {tasks.map((task) => (
+              <article
+                key={task.id}
+                className="task-card"
+                data-status={task.status}
+              >
+                <div className="task-card-content">
+                  <div className="task-card-header">
+                    <div className="task-info">
+                      <h3 className="task-title">{task.title}</h3>
+                      {task.description && (
+                        <p className="task-description">{task.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="delete-btn"
+                      aria-label="Delete task"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div className="status-control">
+                    <label htmlFor={`status-${task.id}`} className="status-label">
+                      Status
+                    </label>
                     <select
+                      id={`status-${task.id}`}
                       value={task.status}
                       onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                      style={{ padding: '5px' }}
+                      className="status-select"
                     >
                       <option value="todo">To Do</option>
                       <option value="in_progress">In Progress</option>
@@ -167,28 +164,20 @@ export default function TasksPage() {
                       <option value="canceled">Canceled</option>
                     </select>
                   </div>
-                  <small style={{ color: '#999' }}>
-                    Created: {new Date(task.created_at).toLocaleDateString()}
-                  </small>
+
+                  <div className="task-metadata">
+                    Created {new Date(task.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  style={{
-                    padding: '5px 15px',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

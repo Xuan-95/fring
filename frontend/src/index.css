@@ -1,11 +1,27 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Neo-Brutalist Paper Theme */
+  --cream: #FAF6F0;
+  --paper: #FFF9F0;
+  --ink: #1A1A1A;
+  --shadow: #C4B5A0;
+  --accent-orange: #FF6B35;
+  --accent-coral: #FF8C61;
+  --accent-yellow: #FFD23F;
+  --accent-green: #06D6A0;
+  --status-todo: #FFD23F;
+  --status-progress: #FF6B35;
+  --status-done: #06D6A0;
+  --status-canceled: #999;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Typography */
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+
+  font-family: var(--font-body);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--ink);
+  background-color: var(--cream);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,56 +29,167 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Geometric background decoration */
+body::before {
+  content: '';
+  position: fixed;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background: var(--accent-yellow);
+  opacity: 0.1;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -150px;
+  left: -150px;
+  width: 500px;
+  height: 500px;
+  background: var(--accent-orange);
+  opacity: 0.08;
+  transform: rotate(45deg);
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0;
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+a {
+  color: var(--accent-orange);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-coral);
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.15s ease;
+  position: relative;
+  box-shadow: 4px 4px 0 var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+button:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  transition: all 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-yellow);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #999;
+}
+
+/* Animation keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  a:hover {
-    color: #747bff;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
