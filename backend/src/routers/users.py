@@ -33,12 +33,6 @@ def create_user(user: UserModel, db: Session = Depends(_get_db)):
             detail="Password is required",
         )
 
-    if len(user.password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters",
-        )
-
     existing_user = (
         db.query(User)
         .filter((User.username == user.username) | (User.email == user.email))
@@ -51,8 +45,16 @@ def create_user(user: UserModel, db: Session = Depends(_get_db)):
         else:
             raise UserException("Already existing email")
 
+    try:
+        password_hash = get_password_hash(user.password)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     user_data = user.dict(exclude={"password"})
-    user_data["password_hash"] = get_password_hash(user.password)
+    user_data["password_hash"] = password_hash
 
     db_user = User(**user_data)
     db.add(db_user)

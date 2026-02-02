@@ -146,13 +146,15 @@ def change_password(
             detail="Current password is incorrect",
         )
 
-    if len(password_data.new_password) < 8:
+    try:
+        new_password_hash = get_password_hash(password_data.new_password)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 8 characters",
+            detail=str(e),
         )
 
-    current_user.password_hash = get_password_hash(password_data.new_password)
+    current_user.password_hash = new_password_hash
     db.commit()
 
     return {"message": "Password changed successfully"}
