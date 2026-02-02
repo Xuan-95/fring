@@ -42,7 +42,7 @@ npm run lint
 ### Backend
 
 - **Framework**: FastAPI with SQLAlchemy ORM
-- **Database**: PostgreSQL (connection string in `DATABASE_URL` env var)
+- **Database**: SQLite (file-based database, path in `DATABASE_URL` env var)
 - **Python Version**: 3.13
 
 **Structure**:

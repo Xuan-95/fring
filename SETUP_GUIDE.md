@@ -2,32 +2,33 @@
 
 ## Prerequisites
 
-Make sure PostgreSQL is running and you have the database created:
-```bash
-createdb life-manager  # or your preferred database name
-```
+- Python 3.13+ with `uv` package manager
+- Node.js and npm for the frontend
+- **No database server required!** SQLite database file is created automatically
 
-## Step 1: Run Database Migration
+## Step 1: Backend Setup
 
-Add the authentication fields to the users table:
+Install dependencies:
 
 ```bash
 cd backend
-psql postgresql://postgres:postgres@localhost/life-manager -f migrations/001_add_auth_fields.sql
+uv sync
 ```
 
-Expected output:
+The application uses SQLite with the database file configured in `.env.development`:
 ```
-ALTER TABLE
+DATABASE_URL="sqlite:///./fring.db"
 ```
+
+**The database and tables are created automatically** when you first run the application!
 
 ## Step 2: Generate Password Hashes
 
-Run the password hashing script:
+Create password hashes for test users:
 
 ```bash
 cd backend
-python scripts/hash_password.py
+uv run python scripts/hash_password.py
 ```
 
 You'll be prompted to enter passwords. Create passwords for two users:
@@ -49,20 +50,20 @@ INSERT INTO users (username, email, password_hash, is_active) VALUES
 Then run:
 
 ```bash
-psql postgresql://postgres:postgres@localhost/life-manager -f scripts/create_users.sql
+sqlite3 fring.db < scripts/create_users.sql
 ```
 
 Verify users were created:
 
 ```bash
-psql postgresql://postgres:postgres@localhost/life-manager -c "SELECT id, username, email, is_active FROM users;"
+sqlite3 fring.db "SELECT id, username, email, is_active FROM users;"
 ```
 
 ## Step 4: Start the Backend
 
 ```bash
 cd backend
-python main.py
+uv run python main.py
 ```
 
 The server should start on http://localhost:8000
@@ -86,6 +87,7 @@ In a new terminal:
 
 ```bash
 cd frontend
+npm install  # first time only
 npm run dev
 ```
 
@@ -127,9 +129,9 @@ curl -X POST http://localhost:8000/api/v1/tasks/{task_id}/users/{user2_id} \
 - Check that frontend is accessing http://localhost:8000 (not https or different port)
 
 ### Database connection errors
-- Verify PostgreSQL is running
 - Check DATABASE_URL in backend/.env.development
-- Make sure the database exists
+- Make sure the backend directory is writable (SQLite needs to create fring.db)
+- If issues persist, delete fring.db and restart the server (tables will be recreated)
 
 ### Import errors in backend
 - Run `uv sync` in the backend directory
@@ -139,18 +141,43 @@ curl -X POST http://localhost:8000/api/v1/tasks/{task_id}/users/{user2_id} \
 - Run `npm install` in the frontend directory
 - Clear node_modules and reinstall if needed
 
+## Database Management
+
+### View database contents
+```bash
+cd backend
+sqlite3 fring.db
+```
+
+Common SQLite commands:
+```sql
+.tables              -- List all tables
+.schema users        -- Show table structure
+SELECT * FROM users; -- Query data
+.quit                -- Exit
+```
+
+### Reset database
+```bash
+cd backend
+rm fring.db
+uv run python main.py  # Tables will be recreated automatically
+```
+
 ## Security Notes
 
 **Development Setup:**
 - JWT secret is in .env.development (DO NOT commit to git)
 - Cookies use `secure=False` for local HTTP development
 - CORS allows http://localhost:5173
+- SQLite database file should be in .gitignore
 
 **For Production:**
 - Generate a new JWT_SECRET_KEY (never reuse dev key)
 - Set cookie `secure=True` (requires HTTPS)
 - Update CORS origins to production domain
-- Use environment-specific .env files
+- Consider using PostgreSQL or MySQL for production (SQLite is great for development but may not handle high concurrency)
+- Back up the database file regularly
 
 ## Next Steps
 
@@ -161,3 +188,13 @@ Optional enhancements you can add:
 - Add task filtering by status
 - Add pagination for tasks list
 - Add user search when assigning tasks
+
+## Why SQLite?
+
+SQLite is perfect for development and small-scale deployments:
+- **Zero configuration** - no database server to install or manage
+- **Portable** - single file database that's easy to backup and version control (for schema)
+- **Fast** - excellent for development and testing
+- **Lightweight** - perfect for demos, prototypes, and low-traffic applications
+
+For production applications with multiple concurrent users, consider migrating to PostgreSQL or MySQL. Thanks to SQLAlchemy, the migration is straightforward!
