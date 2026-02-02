@@ -16,7 +16,7 @@
 
 ## Overview
 
-Fring backend is a RESTful API service for task management built with FastAPI and PostgreSQL. It provides user management, task management, and assignment capabilities through a clean, async-first architecture.
+Fring backend is a RESTful API service for task management built with FastAPI and SQLite. It provides user management, task management, and assignment capabilities through a clean, async-first architecture.
 
 **Key Features:**
 - User CRUD operations with unique username/email validation
@@ -34,8 +34,7 @@ Fring backend is a RESTful API service for task management built with FastAPI an
 |-----------|-----------|---------|---------|
 | **Framework** | FastAPI | ≥0.116.1 | Modern, async web framework with automatic API docs |
 | **ORM** | SQLAlchemy | ≥2.0.43 | Database abstraction with declarative models |
-| **Database** | PostgreSQL | Latest | Production-grade relational database |
-| **DB Driver** | psycopg2 | ≥2.9.10 | PostgreSQL adapter for Python |
+| **Database** | SQLite | 3+ | Lightweight, serverless, file-based relational database |
 | **Validation** | Pydantic | ≥2.0 | Data validation and settings management |
 | **Settings** | pydantic-settings | ≥2.12.0 | Environment-based configuration |
 | **Server** | Uvicorn | ≥0.35.0 | ASGI server with hot reload support |
@@ -77,8 +76,8 @@ Fring backend is a RESTful API service for task management built with FastAPI an
 └────────────────────┬────────────────────────────┘
                      │ DDL/DML
 ┌────────────────────▼────────────────────────────┐
-│         PostgreSQL Database Layer                │
-│  - Data persistence                              │
+│         SQLite Database Layer                    │
+│  - Data persistence (single file)                │
 │  - Referential integrity (CASCADE)               │
 │  - Indexing (username, email unique indexes)     │
 └──────────────────────────────────────────────────┘
@@ -138,10 +137,10 @@ Fring backend is a RESTful API service for task management built with FastAPI an
 #### `users` Table
 ```sql
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR NOT NULL UNIQUE,
     email VARCHAR NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -160,12 +159,12 @@ CREATE TABLE users (
 #### `tasks` Table
 ```sql
 CREATE TABLE tasks (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     title VARCHAR NOT NULL,
     description VARCHAR,
     status VARCHAR NOT NULL DEFAULT 'todo',
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -682,11 +681,11 @@ Configuration is managed via `.env` files using Pydantic Settings.
 
 | Variable | Type | Description | Example |
 |----------|------|-------------|---------|
-| `DATABASE_URL` | String | PostgreSQL connection string | `postgresql://user:pass@host/db` |
+| `DATABASE_URL` | String | SQLite database file path | `sqlite:///./fring.db` |
 
 **Development Default:**
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@localhost/life-manager
+DATABASE_URL=sqlite:///./fring.db
 ```
 
 ### Settings Class
@@ -696,7 +695,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost/life-manager
 ```python
 from pydantic_settings import BaseSettings
 
-class PostgresSettings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     DATABASE_URL: str
 
     class Config:
@@ -715,8 +714,8 @@ class PostgresSettings(BaseSettings):
 
 ### Prerequisites
 - Python 3.13+
-- PostgreSQL database
 - `uv` package manager
+- **No database server required** - SQLite is embedded
 
 ### Installation
 
@@ -1115,8 +1114,9 @@ allow_origins=[
 ### Data Layer
 - [ ] Database migrations (Alembic)
 - [ ] Soft deletes (keep audit trail)
-- [ ] Full-text search (PostgreSQL FTS)
-- [ ] Database connection pooling tuning
+- [ ] Full-text search (SQLite FTS5 or migrate to PostgreSQL)
+- [ ] Consider PostgreSQL for production (better concurrency handling)
+- [ ] Database connection pooling tuning (if using PostgreSQL)
 
 ### Observability
 - [ ] Structured logging (JSON logs)
@@ -1144,31 +1144,34 @@ allow_origins=[
 ### Production Checklist
 
 - [ ] **Environment Variables:** Secure secrets management (not `.env` files)
-- [ ] **Database:** Connection pooling, read replicas for scaling
+- [ ] **Database:** Consider PostgreSQL/MySQL for production (SQLite is great for development/low-traffic apps)
 - [ ] **CORS:** Whitelist specific origins only
 - [ ] **HTTPS:** TLS termination (reverse proxy or cloud load balancer)
 - [ ] **Logging:** Structured JSON logs to stdout
 - [ ] **Monitoring:** Health checks, metrics, alerting
 - [ ] **Migrations:** Use Alembic for schema changes
-- [ ] **Backups:** Automated PostgreSQL backups
-- [ ] **Scaling:** Horizontal scaling with stateless API servers
+- [ ] **Backups:** Regular database file backups (or automated backups for PostgreSQL/MySQL)
+- [ ] **Scaling:** For high concurrency, migrate to PostgreSQL with connection pooling
 
 ### Recommended Stack
 
-**Option 1: Cloud Platform (AWS/GCP/Azure)**
+**Option 1: Simple Deployment (Low Traffic)**
+- **Platform:** Render / Railway / Fly.io
+- **Database:** SQLite file (included in deployment)
+- **Deployment:** Git push to deploy
+- **Best for:** Demos, prototypes, personal projects
+
+**Option 2: Cloud Platform (Production Scale)**
 - **Compute:** Elastic Beanstalk / Cloud Run / App Service
 - **Database:** RDS PostgreSQL / Cloud SQL / Azure Database
 - **Load Balancer:** ALB / Cloud Load Balancing / Azure Load Balancer
+- **Best for:** High concurrency, multiple replicas
 
-**Option 2: Container Platform**
+**Option 3: Container Platform**
 - **Orchestration:** Kubernetes / ECS / Cloud Run
 - **Image:** Docker container with Uvicorn
 - **Database:** Managed PostgreSQL service
-
-**Option 3: Platform as a Service**
-- **Platform:** Render / Railway / Fly.io
-- **Database:** Managed PostgreSQL addon
-- **Deployment:** Git push to deploy
+- **Best for:** Microservices architecture, scaling needs
 
 ---
 
@@ -1178,9 +1181,9 @@ allow_origins=[
 
 **1. Database connection errors**
 ```
-sqlalchemy.exc.OperationalError: could not connect to server
+sqlalchemy.exc.OperationalError: unable to open database file
 ```
-**Solution:** Check `DATABASE_URL` in `.env` and ensure PostgreSQL is running.
+**Solution:** Check `DATABASE_URL` in `.env` and ensure the backend directory is writable (SQLite needs to create the database file).
 
 **2. Import errors**
 ```
