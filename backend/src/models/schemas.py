@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 from pydantic import BaseModel, EmailStr, Field
@@ -40,6 +40,7 @@ class TaskModel(BaseModel):
     title: str
     description: str | None = None
     status: TaskStatus = TaskStatus.TODO
+    due_date: date | None = None
     assigned_to: list[UserModel] = []
 
 
@@ -47,6 +48,7 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     status: TaskStatus | None = None
+    due_date: date | None = None
 
 
 class TaskResponse(TaskModel):

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Column, ForeignKey, Integer, Table
 from sqlalchemy.orm import (
@@ -43,6 +43,7 @@ class Task(Base):
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.TODO)
+    due_date: Mapped[date | None] = mapped_column(default=None)
     assigned_users: Mapped[list[User]] = relationship(secondary=user_tasks, back_populates="tasks")
 
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)

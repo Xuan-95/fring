@@ -8,9 +8,14 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
   const [users, setUsers] = useState([]);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    status: 'todo',
+    dueDate: ''
+  });
 
   const loadTasks = async () => {
     try {
@@ -41,16 +46,17 @@ export default function TasksPage() {
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+    if (!newTask.title.trim()) return;
 
     try {
       await createTask({
-        title: newTaskTitle,
-        description: newTaskDescription,
-        status: 'todo',
+        title: newTask.title,
+        description: newTask.description,
+        status: newTask.status,
+        due_date: newTask.dueDate || null
       });
-      setNewTaskTitle('');
-      setNewTaskDescription('');
+      setNewTask({ title: '', description: '', status: 'todo', dueDate: '' });
+      setShowQuickAdd(false);
       await loadTasks();
     } catch (err) {
       setError(err.message);
@@ -58,7 +64,7 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    if (!confirm('Delete this task?')) return;
 
     try {
       await deleteTask(taskId);
@@ -95,165 +101,229 @@ export default function TasksPage() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      todo: 'var(--status-todo)',
+      in_progress: 'var(--status-progress)',
+      completed: 'var(--status-done)',
+      canceled: 'var(--status-canceled)'
+    };
+    return colors[status] || colors.todo;
+  };
+
   if (loading) {
-    return <div className="loading-state">Loading tasks...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading tasks...</p>
+      </div>
+    );
   }
 
   return (
     <div className="tasks-page">
-      <header className="tasks-header">
-        <div className="tasks-header-content">
-          <h1 className="tasks-title">Tasks</h1>
-          <p className="welcome-text">Welcome back, {user?.username}! 👋</p>
+      <header className="page-header">
+        <div className="header-content">
+          <h1 className="page-title">Fring</h1>
+          <p className="welcome-text">Welcome back, {user?.username}</p>
         </div>
         <button onClick={logout} className="logout-btn">
-          Logout
+          Sign out
         </button>
       </header>
 
       {error && (
-        <div className="error-message">
-          ⚠️ {error}
+        <div className="error-banner">
+          <span className="error-icon">⚠</span>
+          {error}
         </div>
       )}
 
-      <section className="create-task-section">
-        <h2 className="create-task-title">Create New Task</h2>
-        <form onSubmit={handleCreateTask} className="create-task-form">
-          <div className="form-group">
-            <input
-              type="text"
-              placeholder="What needs to be done?"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              required
-            />
+      <main className="main-content">
+        <div className="content-header">
+          <div className="content-header-left">
+            <h2>Tasks</h2>
+            <span className="task-count">{tasks.length}</span>
           </div>
-          <div className="form-group">
-            <textarea
-              placeholder="Add some details... (optional)"
-              value={newTaskDescription}
-              onChange={(e) => setNewTaskDescription(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="submit-btn">
-            Add Task
+          <button
+            onClick={() => setShowQuickAdd(!showQuickAdd)}
+            className="btn-primary"
+          >
+            {showQuickAdd ? 'Cancel' : '+ New task'}
           </button>
-        </form>
-      </section>
-
-      <section className="tasks-list-section">
-        <div className="tasks-list-header">
-          <h2>Your Tasks</h2>
-          <div className="task-count-badge">{tasks.length}</div>
         </div>
+
+        {showQuickAdd && (
+          <form onSubmit={handleCreateTask} className="quick-add-form">
+            <div className="quick-add-grid">
+              <input
+                type="text"
+                placeholder="Task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                className="quick-add-input title-input"
+                required
+                autoFocus
+              />
+              <input
+                type="text"
+                placeholder="Description (optional)"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                className="quick-add-input"
+              />
+              <input
+                type="date"
+                value={newTask.dueDate}
+                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                className="quick-add-input date-input"
+              />
+              <button type="submit" className="btn-primary btn-small">
+                Create
+              </button>
+            </div>
+          </form>
+        )}
 
         {tasks.length === 0 ? (
           <div className="empty-state">
-            No tasks yet. Create your first one above!
+            <div className="empty-icon">📋</div>
+            <h3>No tasks yet</h3>
+            <p>Create your first task to get started</p>
           </div>
         ) : (
-          <div className="tasks-grid">
-            {tasks.map((task) => (
-              <article
-                key={task.id}
-                className="task-card"
-                data-status={task.status}
-              >
-                <div className="task-card-content">
-                  <div className="task-card-header">
-                    <div className="task-info">
-                      <h3 className="task-title">{task.title}</h3>
-                      {task.description && (
-                        <p className="task-description">{task.description}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="delete-btn"
-                      aria-label="Delete task"
-                    >
-                      Delete
-                    </button>
-                  </div>
-
-                  <div className="status-control">
-                    <label htmlFor={`status-${task.id}`} className="status-label">
-                      Status
-                    </label>
-                    <select
-                      id={`status-${task.id}`}
-                      value={task.status}
-                      onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                      className="status-select"
-                    >
-                      <option value="todo">To Do</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="canceled">Canceled</option>
-                    </select>
-                  </div>
-
-                  {/* User Assignment Section */}
-                  <div className="assignment-control">
-                    <label className="assignment-label">Assigned To</label>
-
-                    {/* Display currently assigned users as badges */}
-                    {task.assigned_to && task.assigned_to.length > 0 && (
-                      <div className="assigned-users-badges">
-                        {task.assigned_to.map((assignedUser) => (
-                          <div key={assignedUser.id} className="user-badge">
-                            <span className="user-badge-name">{assignedUser.username}</span>
-                            {task.assigned_to.length > 1 && (
-                              <button
-                                onClick={() => handleRemoveUser(task.id, assignedUser.id)}
-                                className="user-badge-remove"
-                                aria-label={`Remove ${assignedUser.username}`}
-                                type="button"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                        ))}
+          <div className="tasks-table-container">
+            <table className="tasks-table">
+              <thead>
+                <tr>
+                  <th className="col-title">Task</th>
+                  <th className="col-status">Status</th>
+                  <th className="col-assigned">Assigned</th>
+                  <th className="col-due">Due</th>
+                  <th className="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task, index) => (
+                  <tr
+                    key={task.id}
+                    className="task-row"
+                    style={{ animationDelay: `${index * 0.03}s` }}
+                  >
+                    <td className="task-title-cell">
+                      <div className="task-title-content">
+                        <span
+                          className="status-indicator"
+                          style={{ backgroundColor: getStatusColor(task.status) }}
+                        ></span>
+                        <div className="task-text">
+                          <h3 className="task-title">{task.title}</h3>
+                          {task.description && (
+                            <p className="task-description">{task.description}</p>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </td>
 
-                    {/* Dropdown to add users */}
-                    <select
-                      className="assignment-select"
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          handleAssignUser(task.id, parseInt(e.target.value));
-                          e.target.value = '';
-                        }
-                      }}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>Add user...</option>
-                      {users
-                        .filter(u => !task.assigned_to?.some(au => au.id === u.id))
-                        .map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.username}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
+                    <td className="task-status-cell">
+                      <select
+                        value={task.status}
+                        onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                        className="status-select"
+                        style={{ color: getStatusColor(task.status) }}
+                      >
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="canceled">Canceled</option>
+                      </select>
+                    </td>
 
-                  <div className="task-metadata">
-                    Created {new Date(task.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </div>
-                </div>
-              </article>
-            ))}
+                    <td className="task-assigned-cell">
+                      <div className="assigned-users">
+                        {task.assigned_to && task.assigned_to.length > 0 ? (
+                          <div className="user-chips">
+                            {task.assigned_to.map((assignedUser) => (
+                              <div key={assignedUser.id} className="user-chip">
+                                <span className="user-avatar">
+                                  {assignedUser.username.charAt(0).toUpperCase()}
+                                </span>
+                                <span className="user-name">{assignedUser.username}</span>
+                                {task.assigned_to.length > 1 && (
+                                  <button
+                                    onClick={() => handleRemoveUser(task.id, assignedUser.id)}
+                                    className="user-remove"
+                                    type="button"
+                                    aria-label={`Remove ${assignedUser.username}`}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="unassigned-text">Unassigned</span>
+                        )}
+                        <select
+                          className="user-select"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleAssignUser(task.id, parseInt(e.target.value));
+                              e.target.value = '';
+                            }
+                          }}
+                          defaultValue=""
+                        >
+                          <option value="" disabled>+ Add</option>
+                          {users
+                            .filter(u => !task.assigned_to?.some(au => au.id === u.id))
+                            .map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.username}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </td>
+
+                    <td className="task-due-cell">
+                      <span className="due-date">
+                        {formatDate(task.due_date)}
+                      </span>
+                    </td>
+
+                    <td className="task-actions-cell">
+                      <button
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="btn-delete"
+                        aria-label="Delete task"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 0 1 1.334-1.334h2.666a1.333 1.333 0 0 1 1.334 1.334V4m2 0v9.333a1.333 1.333 0 0 1-1.334 1.334H4.667a1.333 1.333 0 0 1-1.334-1.334V4h9.334Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </section>
+      </main>
     </div>
   );
 }
