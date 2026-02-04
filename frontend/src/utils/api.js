@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000/api/v1';
+const BASE_URL = '/api/v1';
 
 async function apiRequest(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;

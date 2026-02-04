@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/v1/auth/me', {
+      const response = await fetch('/api/v1/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       console.log('🔵 Sending login request...');
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+      const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('access_token');
       if (token) {
-        await fetch('http://localhost:8000/api/v1/auth/logout', {
+        await fetch('/api/v1/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
